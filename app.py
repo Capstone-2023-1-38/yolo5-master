@@ -29,6 +29,7 @@ Usage - formats:
 """
 
 import argparse
+import json
 import os
 import platform
 import sys
@@ -52,7 +53,9 @@ from utils.torch_utils import select_device, smart_inference_mode
 from flask import Flask, render_template, Response
 import cv2
 import torch
-
+import requests
+import numpy as np
+import socket
 
 app = Flask(__name__)
 
@@ -63,9 +66,9 @@ def video_show():
 @smart_inference_mode()
 def gen_frames(
         weights=ROOT / 'yolov5s.pt',  # model path or triton URL
-        source=cv2.CAP_DSHOW,  # file/dir/URL/glob/screen/0(webcam)
+        source= 0,  # file/dir/URL/glob/screen/0(webcam)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
-        imgsz=(640, 640),  # inference size (height, width)
+        imgsz=(480, 640),  # inference size (height, width)
         conf_thres=0.25,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
         max_det=1000,  # maximum detections per image
@@ -170,19 +173,39 @@ def gen_frames(
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
+                path = '2floor.png'
+                frame = cv2.imread(path)
+                xy = []
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(f'{txt_path}.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
-
+                        source_coord2 = np.float32([xywh[0]*imgsz[1], min((xywh[1]+xywh[3]/2)*imgsz[0], 480)])
+                        dot = np.squeeze(INV_M @ np.expand_dims(np.append(source_coord2, 1), axis=1))
+                        dot = dot[:2] / dot[2]
+                        x = dot.astype(int)[0] / W
+                        y = dot.astype(int)[1] / H
+                        center = (int((215 - 188) * x + 188), (int((280 - 165) * y + 165)))
+                        # cv2.circle(frame, center, 5, (0, 0, 255), -1)
+                        tmp = {"x": int(center[0]), "y": int(center[1])}
+                        xy.append(tmp)
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+
+                response = requests.post("http://127.0.0.1:8080/cameraLocation", json=
+                    {
+                        "ip": hostip,
+                        "xy": xy
+                    }
+                )
+                # cv2.imshow('frame', frame)
+                # cv2.waitKey(100)
 
             # Stream results
             im0 = annotator.result()
@@ -278,5 +301,25 @@ def parse_opt():
 
 
 if __name__ == '__main__':
+    # 원본 이미지에서 원하는 지점의 좌표
+    source_coord = [[149, 478], [248, 348], [500, 478], [392, 348]]
+    # H와 W 는 새로 생성될 이미지(destination_coord)의 크기를 선택한 지점의 상하좌우 최대값으로 넣기 위해 구한다
+    W = max(source_coord[2][0], source_coord[3][0]) - min(source_coord[0][0],
+                                                          source_coord[1][0])
+    H = max(source_coord[0][1], source_coord[1][1], source_coord[2][1],
+            source_coord[3][1]) - min(source_coord[0][1], source_coord[1][1],
+                                      source_coord[2][1], source_coord[3][1])
+    source_coord = np.float32(source_coord)
+    # 변환 이미지에서 원하는 지점의 좌표 ( (0,0) ~ (W,H)로 변환 )
+    destination_coord = np.float32([[0, 0], [0, H], [W, 0], [W, H]])
+    # 원본 -> 변환 미지수 8개를 구한다
+    M = cv2.getPerspectiveTransform(source_coord, destination_coord)
+    # 변환 -> 원본 미지수 8개를 구한다
+    M2 = cv2.getPerspectiveTransform(destination_coord, source_coord)
+    # 원본 -> 변환의 역행렬을 구한다
+    INV_M = np.linalg.pinv(M2)
+
+    hostname = socket.gethostname()
+    hostip = socket.gethostbyname(hostname)
 
     app.run(debug=True)
