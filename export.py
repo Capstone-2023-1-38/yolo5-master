@@ -25,7 +25,7 @@ Usage:
     $ python export.py --weights yolov5s.pt --include torchscript onnx openvino engine coreml tflite ...
 
 Inference:
-    $ python app.py --weights yolov5s.pt                 # PyTorch
+    $ python detect.py --weights yolov5s.pt                 # PyTorch
                                  yolov5s.torchscript        # TorchScript
                                  yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
                                  yolov5s_openvino_model     # OpenVINO
@@ -768,7 +768,7 @@ def run(
             '# WARNING ⚠️ SegmentationModel not yet supported for PyTorch Hub AutoShape inference' if seg else ''
         LOGGER.info(f'\nExport complete ({time.time() - t:.1f}s)'
                     f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
-                    f"\nDetect:          python {dir / ('app.py' if det else 'predict.py')} --weights {f[-1]} {h}"
+                    f"\nDetect:          python {dir / ('detect.py' if det else 'predict.py')} --weights {f[-1]} {h}"
                     f"\nValidate:        python {dir / 'val.py'} --weights {f[-1]} {h}"
                     f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')  {s}"
                     f'\nVisualize:       https://netron.app')

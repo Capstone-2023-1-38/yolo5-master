@@ -188,7 +188,7 @@ class _RepeatSampler:
 
 
 class LoadScreenshots:
-    # YOLOv5 screenshot dataloader, i.e. `python app.py --source "screen 0 100 100 512 256"`
+    # YOLOv5 screenshot dataloader, i.e. `python detect.py --source "screen 0 100 100 512 256"`
     def __init__(self, source, img_size=640, stride=32, auto=True, transforms=None):
         # source = [screen_number left top width height] (pixels)
         check_requirements('mss')
@@ -237,7 +237,7 @@ class LoadScreenshots:
 
 
 class LoadImages:
-    # YOLOv5 image/video dataloader, i.e. `python app.py --source image.jpg/vid.mp4`
+    # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
     def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
         if isinstance(path, str) and Path(path).suffix == '.txt':  # *.txt file with img/vid/dir on each line
             path = Path(path).read_text().rsplit()
@@ -340,7 +340,7 @@ class LoadImages:
 
 
 class LoadStreams:
-    # YOLOv5 streamloader, i.e. `python app.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
+    # YOLOv5 streamloader, i.e. `python detect.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
     def __init__(self, sources='file.streams', img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
         torch.backends.cudnn.benchmark = True  # faster for fixed-size inference
         self.mode = 'stream'
@@ -363,7 +363,7 @@ class LoadStreams:
             if s == 0:
                 assert not is_colab(), '--source 0 webcam unsupported on Colab. Rerun command in a local environment.'
                 assert not is_kaggle(), '--source 0 webcam unsupported on Kaggle. Rerun command in a local environment.'
-            cap = cv2.VideoCapture(s)
+            cap = cv2.VideoCapture(s, cv2.CAP_DSHOW)
             assert cap.isOpened(), f'{st}Failed to open {s}'
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))

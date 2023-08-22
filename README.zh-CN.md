@@ -113,7 +113,7 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 最新的YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) 中下载，并将结果保存到 `runs/detect` 。
 
 ```bash
-python app.py --weights yolov5s.pt --source 0                               # webcam
+python detect.py --weights yolov5s.pt --source 0                               # webcam
                                                img.jpg                         # image
                                                vid.mp4                         # video
                                                screen                          # screenshot
