@@ -33,6 +33,9 @@ def gen_frames():
         yield (b'--frame\r\n'
                       b'Content-Type: image/jpeg\r\n\r\n' + frame_shm[1][:frame_shm[0]] + b'\r\n')
 
+    frame_shm.shm.close()
+    frame_shm.shm.unlink()
+
         # _, frame = cap.read()
         # if not _:
         #     break

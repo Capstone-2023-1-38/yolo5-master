@@ -35,11 +35,6 @@ import platform
 import sys
 from pathlib import Path
 
-import flask
-import torch
-import asyncio
-import websockets
-
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -55,10 +50,9 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 import cv2
 import torch
-import requests
 import numpy as np
 import socket
-import zlib
+import requests
 
 from multiprocessing import shared_memory
 
@@ -98,7 +92,10 @@ def run(
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
 ):
-    framedata = shared_memory.ShareableList([0, ' '*100000], name="frame")
+    try:
+        framedata = shared_memory.ShareableList([0, ' '*200000], name="frame")
+    except FileExistsError:
+        framedata = shared_memory.ShareableList(name="frame")
     # framedata = np.frombuffer(shm.buf, np.uint8)
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -122,7 +119,7 @@ def run(
     # Dataloader
     bs = 1  # batch_size
     if webcam:
-        view_img = check_imshow(warn=True)
+        # view_img = check_imshow(warn=True)
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
         bs = len(dataset)
     elif screenshot:
@@ -206,11 +203,12 @@ def run(
                     # print(int(center[0]), int(center[1]))
                     # cv2.circle(frame, center, 5, (0, 0, 255), -1)
                     tmp = {"x": int(center[0]), "y": int(center[1])}
+                    # tmp = {"x": 298, "y": 394}
                     xy.append(tmp)
 
                 # response = requests.post("http://127.0.0.1:8080/cameraLocation", json=
                 #     {
-                #         "ip": hostip,
+                #         "ip": "1",
                 #         "xy": xy
                 #     }
                 # )
@@ -250,18 +248,11 @@ def run(
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
 
         ret, buffer = cv2.imencode('.jpg', im0)
-        # frame = (b'--frame\r\n'
-        #        b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-        # shared_memory.SharedMemory(name="frame", create=False).__setattr__("size", buffer.size)
         bufferToBytes = buffer.tobytes()
         framedata[0], framedata[1] = len(bufferToBytes), bufferToBytes
-        # framedata = buffer.tobytes()
-        # print(buffer.tobytes())
-        headers = {'Content-Type': "image/jpeg"}
-        # requests.get("http://172.30.1.48:5000/video", headers=headers, params={"data": framedata})
-        # response = requests.post("http://127.0.0.1:5000/getFrame", data=framedata)
-        # response = requests.post("http://127.0.0.1:8080/cameraFrame/"+hostip, data=framedata)
 
+    framedata.shm.close()
+    framedata.shm.unlink()
     # Print results
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
