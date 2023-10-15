@@ -1,11 +1,6 @@
-import numpy as np
 from flask import Flask, render_template, Response
 from multiprocessing import shared_memory
 import time
-import cv2
-import torch
-# from fastapi import FastAPI
-# from fastapi.responses import StreamingResponse
 
 app = Flask(__name__)
 
@@ -14,8 +9,8 @@ app = Flask(__name__)
 # cap = cv2.VideoCapture(0)
 @app.route('/')
 def video_show():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-    # return render_template('video_show.html')
+    # return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return render_template('video_show.html')
 
 # @app.before_request
 # def getFrame():
