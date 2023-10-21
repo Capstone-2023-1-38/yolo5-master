@@ -214,7 +214,8 @@ def run(
                         {
                             "ip": "2",
                             "xy": xy
-                        }
+                        },
+                        timeout=0.01
                     )
                     # cv2.imshow('frame', frame)
                     # cv2.waitKey(100)
