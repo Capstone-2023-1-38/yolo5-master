@@ -201,8 +201,10 @@ def run(
                         dot = dot[:2] / dot[2]
                         x = dot.astype(int)[0] / W
                         y = dot.astype(int)[1] / H
-                        # center = (int((215 - 188) * x + 188), (int((280 - 165) * y + 165)))
-                        center = ((int((446 - 188) * y + 188)), int((200 - 168) * x + 168))
+                        center = (max(min(int((215 - 188) * x + 188),215),188), max(min(int((590 - 170) * y + 170),590),170))
+                        # center = (max(min(int((446 - 200) * y + 200),446),200), max(min(int((200 - 168) * x + 168),200),168))
+                        # center = (max(min(int((447 - 415) * x + 415),447),415), max(min(int((590 - 170) * y + 170),590),170))
+                        # center = (max(min(int((446 - 188) * y + 188),446),188), max(min(int((590 - 560) * x + 560),590),560))
 
                         # print(int(center[0]), int(center[1]))
                         # cv2.circle(frame, center, 5, (0, 0, 255), -1)
@@ -212,10 +214,9 @@ def run(
 
                     response = requests.post("http://127.0.0.1:8080/cameraLocation", json=
                         {
-                            "ip": "2",
+                            "ip": "1",
                             "xy": xy
-                        },
-                        timeout=0.01
+                        }
                     )
                     # cv2.imshow('frame', frame)
                     # cv2.waitKey(100)
@@ -307,8 +308,8 @@ def run(
 
 if __name__ == '__main__':
     # 원본 이미지에서 원하는 지점의 좌표
-    # source_coord = [[149, 478], [248, 348], [500, 478], [392, 348]]
-    source_coord = [[200, 479], [325, 200], [454, 479], [360, 200]]
+    source_coord = [[195, 479], [305, 210], [440, 479], [335, 210]]
+    # source_coord = [[111, 479], [260, 240], [425, 479], [310, 240]]
 
     # H와 W 는 새로 생성될 이미지(destination_coord)의 크기를 선택한 지점의 상하좌우 최대값으로 넣기 위해 구한다
     W = max(source_coord[2][0], source_coord[3][0]) - min(source_coord[0][0],
